@@ -1,0 +1,155 @@
+<!--
+Copyright (c) 2019-2026, Hossein Moein
+All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+* Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+* Neither the name of Hossein Moein and/or the DataFrame nor the
+  names of its contributors may be used to endorse or promote products
+  derived from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL Hossein Moein BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<!DOCTYPE html>
+<html>
+<body>
+
+  <table align="center" border="1">
+
+    <tr bgcolor="lightblue">
+      <th>Signature</th> <th>Description</th> <th>Parameters</th>
+    </tr>
+    <tr bgcolor="lightgrey">
+      <td bgcolor="maroon"> <font color="white">
+        <PRE><B>#include &lt;DataFrame/DataFrameFinancialVisitors.h&gt;
+
+template&lt;typename T, typename I = unsigned long&gt;
+struct SharpeRatioVisitor;
+
+// -------------------------------------
+
+template&lt;typename T, typename I = unsigned long&gt;
+using sharper_v = SharpeRatioVisitor&lt;T, I&gt;;
+        </B></PRE></font>
+      </td>
+      <td>
+        This is a “single action visitor”, meaning it is passed the whole data vector in one call and you must use the single_act_visit() interface.<BR><BR>
+        This functor class calculates Sharpe ratio given two columns representing asset returns and benchmark returns (or risk-free rate). Note that Sharpe ratio makes sense only if asset returns are normally distributed.<BR>
+        <I>
+        <PRE>
+    explicit
+    SharpeRatioVisitor(bool biased = false);
+        </PRE>
+        </I>
+      </td>
+      <td width="12%">
+        <B>T</B>: Column data type.<BR>
+        <B>I</B>: Index type.
+      </td>
+    </tr>
+
+    <tr bgcolor="lightgrey">
+      <td bgcolor="maroon"> <font color="white">
+        <PRE><B>#include &lt;DataFrame/DataFrameFinancialVisitors.h&gt;
+
+template&lt;typename T, typename I = unsigned long&gt;
+struct TreynorRatioVisitor;
+
+// -------------------------------------
+
+template&lt;typename T, typename I = unsigned long&gt;
+using treynorr_v = TreynorRatioVisitor&lt;T, I&gt;;
+        </B></PRE></font>
+      </td>
+      <td>
+        This is a “single action visitor”, meaning it is passed the whole data vector in one call and you must use the single_act_visit() interface.<BR><BR>
+        This functor class calculates Treynor ratio given two columns representing asset returns and benchmark returns<BR>
+        The Treynor Ratio measures a portfolio’s excess return per unit of systematic risk, i.e. the market volatility of the portfolio.<BR>
+        Often referred to as the “reward-to-volatility ratio”, the Treynor ratio attempts to gauge the risk attributable to a portfolio (and the expected returns) in the context of the total non-diversifiable risk inherent to the market.<BR>
+        <I>
+        <PRE>
+    explicit
+    TreynorRatioVisitor(bool biased = false);
+        </PRE>
+        </I>
+      </td>
+      <td width="12%">
+        <B>T</B>: Column data type.<BR>
+        <B>I</B>: Index type.
+      </td>
+    </tr>
+
+  </table>
+
+<!-- HTML generated using hilite.me --><div style="background: #ffffff; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><pre style="margin: 0; line-height: 125%"><span style="color: #008800; font-weight: bold">static</span> <span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">test_SharpeRatioVisitor</span>()  {
+
+    std<span style="color: #333333">::</span>cout <span style="color: #333333">&lt;&lt;</span> <span style="background-color: #fff0f0">&quot;</span><span style="color: #666666; font-weight: bold; background-color: #fff0f0">\n</span><span style="background-color: #fff0f0">Testing SharpeRatioVisitor{  } ...&quot;</span> <span style="color: #333333">&lt;&lt;</span> std<span style="color: #333333">::</span>endl;
+
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">unsigned</span> <span style="color: #333399; font-weight: bold">long</span><span style="color: #333333">&gt;</span>  idx <span style="color: #333333">=</span>
+        { <span style="color: #0000DD; font-weight: bold">123450</span>, <span style="color: #0000DD; font-weight: bold">123451</span>, <span style="color: #0000DD; font-weight: bold">123452</span>, <span style="color: #0000DD; font-weight: bold">123453</span>, <span style="color: #0000DD; font-weight: bold">123454</span>, <span style="color: #0000DD; font-weight: bold">123455</span>, <span style="color: #0000DD; font-weight: bold">123456</span>, <span style="color: #0000DD; font-weight: bold">123457</span>, <span style="color: #0000DD; font-weight: bold">123458</span>, <span style="color: #0000DD; font-weight: bold">123459</span>, <span style="color: #0000DD; font-weight: bold">123460</span>, <span style="color: #0000DD; font-weight: bold">123461</span>, <span style="color: #0000DD; font-weight: bold">123462</span>, <span style="color: #0000DD; font-weight: bold">123466</span>,
+          <span style="color: #0000DD; font-weight: bold">123467</span>, <span style="color: #0000DD; font-weight: bold">123468</span>, <span style="color: #0000DD; font-weight: bold">123469</span>, <span style="color: #0000DD; font-weight: bold">123470</span>, <span style="color: #0000DD; font-weight: bold">123471</span>, <span style="color: #0000DD; font-weight: bold">123472</span>, <span style="color: #0000DD; font-weight: bold">123473</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>         d1 <span style="color: #333333">=</span>
+        { <span style="color: #6600EE; font-weight: bold">2.5</span>, <span style="color: #6600EE; font-weight: bold">2.45</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.65</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.1</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">1.1</span>, <span style="color: #6600EE; font-weight: bold">1.87</span>, <span style="color: #6600EE; font-weight: bold">0.98</span>, <span style="color: #6600EE; font-weight: bold">0.34</span>, <span style="color: #6600EE; font-weight: bold">1.56</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.34</span>, <span style="color: #6600EE; font-weight: bold">2.3</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.34</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">1.9</span>, <span style="color: #6600EE; font-weight: bold">0.387</span>, <span style="color: #6600EE; font-weight: bold">0.123</span>, <span style="color: #6600EE; font-weight: bold">1.06</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.65</span>, <span style="color: #6600EE; font-weight: bold">2.03</span>, <span style="color: #6600EE; font-weight: bold">0.4</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">1.0</span>, <span style="color: #6600EE; font-weight: bold">0.59</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>         d2 <span style="color: #333333">=</span>
+        { <span style="color: #6600EE; font-weight: bold">0.2</span>, <span style="color: #6600EE; font-weight: bold">0.58</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.60</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.08</span>, <span style="color: #6600EE; font-weight: bold">0.05</span>, <span style="color: #6600EE; font-weight: bold">0.87</span>, <span style="color: #6600EE; font-weight: bold">0.2</span>, <span style="color: #6600EE; font-weight: bold">0.4</span>, <span style="color: #6600EE; font-weight: bold">0.5</span>, <span style="color: #6600EE; font-weight: bold">0.06</span>, <span style="color: #6600EE; font-weight: bold">0.3</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.34</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.9</span>, <span style="color: #6600EE; font-weight: bold">0.8</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.4</span>, <span style="color: #6600EE; font-weight: bold">0.86</span>, <span style="color: #6600EE; font-weight: bold">0.01</span>, <span style="color: #6600EE; font-weight: bold">1.02</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.02</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">1.5</span>, <span style="color: #6600EE; font-weight: bold">0.2</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>            i1 <span style="color: #333333">=</span> { <span style="color: #0000DD; font-weight: bold">22</span>, <span style="color: #0000DD; font-weight: bold">23</span>, <span style="color: #0000DD; font-weight: bold">24</span>, <span style="color: #0000DD; font-weight: bold">25</span>, <span style="color: #0000DD; font-weight: bold">99</span> };
+    MyDataFrame                 df;
+
+    df.load_data(std<span style="color: #333333">::</span>move(idx), std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;asset&quot;</span>, d1), std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;benchmark&quot;</span>, d2), std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;col_3&quot;</span>, i1));
+
+    SharpeRatioVisitor<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>  sh_ratio;
+    <span style="color: #008800; font-weight: bold">const</span> <span style="color: #008800; font-weight: bold">auto</span>                  result <span style="color: #333333">=</span> df.single_act_visit<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span>, <span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;asset&quot;</span>, <span style="background-color: #fff0f0">&quot;benchmark&quot;</span>, sh_ratio).get_result();
+
+    assert(fabs(result <span style="color: #333333">-</span> <span style="color: #6600EE; font-weight: bold">0.425631</span>) <span style="color: #333333">&lt;</span> <span style="color: #6600EE; font-weight: bold">0.00001</span>);
+}
+
+<span style="color: #888888">// -----------------------------------------------------------------------------</span>
+
+<span style="color: #008800; font-weight: bold">static</span> <span style="color: #333399; font-weight: bold">void</span> <span style="color: #0066BB; font-weight: bold">test_TreynorRatioVisitor</span>()  {
+
+    std<span style="color: #333333">::</span>cout <span style="color: #333333">&lt;&lt;</span> <span style="background-color: #fff0f0">&quot;</span><span style="color: #666666; font-weight: bold; background-color: #fff0f0">\n</span><span style="background-color: #fff0f0">Testing TreynorRatioVisitor{  } ...&quot;</span> <span style="color: #333333">&lt;&lt;</span> std<span style="color: #333333">::</span>endl;
+
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">unsigned</span> <span style="color: #333399; font-weight: bold">long</span><span style="color: #333333">&gt;</span>  idx <span style="color: #333333">=</span>
+        { <span style="color: #0000DD; font-weight: bold">123450</span>, <span style="color: #0000DD; font-weight: bold">123451</span>, <span style="color: #0000DD; font-weight: bold">123452</span>, <span style="color: #0000DD; font-weight: bold">123453</span>, <span style="color: #0000DD; font-weight: bold">123454</span>, <span style="color: #0000DD; font-weight: bold">123455</span>, <span style="color: #0000DD; font-weight: bold">123456</span>, <span style="color: #0000DD; font-weight: bold">123457</span>, <span style="color: #0000DD; font-weight: bold">123458</span>, <span style="color: #0000DD; font-weight: bold">123459</span>, <span style="color: #0000DD; font-weight: bold">123460</span>, <span style="color: #0000DD; font-weight: bold">123461</span>, <span style="color: #0000DD; font-weight: bold">123462</span>, <span style="color: #0000DD; font-weight: bold">123466</span>,
+          <span style="color: #0000DD; font-weight: bold">123467</span>, <span style="color: #0000DD; font-weight: bold">123468</span>, <span style="color: #0000DD; font-weight: bold">123469</span>, <span style="color: #0000DD; font-weight: bold">123470</span>, <span style="color: #0000DD; font-weight: bold">123471</span>, <span style="color: #0000DD; font-weight: bold">123472</span>, <span style="color: #0000DD; font-weight: bold">123473</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>         d1 <span style="color: #333333">=</span>
+        { <span style="color: #6600EE; font-weight: bold">2.5</span>, <span style="color: #6600EE; font-weight: bold">2.45</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.65</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.1</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">1.1</span>, <span style="color: #6600EE; font-weight: bold">1.87</span>, <span style="color: #6600EE; font-weight: bold">0.98</span>, <span style="color: #6600EE; font-weight: bold">0.34</span>, <span style="color: #6600EE; font-weight: bold">1.56</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.34</span>, <span style="color: #6600EE; font-weight: bold">2.3</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.34</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">1.9</span>, <span style="color: #6600EE; font-weight: bold">0.387</span>, <span style="color: #6600EE; font-weight: bold">0.123</span>, <span style="color: #6600EE; font-weight: bold">1.06</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.65</span>, <span style="color: #6600EE; font-weight: bold">2.03</span>, <span style="color: #6600EE; font-weight: bold">0.4</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">1.0</span>, <span style="color: #6600EE; font-weight: bold">0.59</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>         d2 <span style="color: #333333">=</span>
+        { <span style="color: #6600EE; font-weight: bold">0.2</span>, <span style="color: #6600EE; font-weight: bold">0.58</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.60</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.08</span>, <span style="color: #6600EE; font-weight: bold">0.05</span>, <span style="color: #6600EE; font-weight: bold">0.87</span>, <span style="color: #6600EE; font-weight: bold">0.2</span>, <span style="color: #6600EE; font-weight: bold">0.4</span>, <span style="color: #6600EE; font-weight: bold">0.5</span>, <span style="color: #6600EE; font-weight: bold">0.06</span>, <span style="color: #6600EE; font-weight: bold">0.3</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.34</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.9</span>, <span style="color: #6600EE; font-weight: bold">0.8</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.4</span>, <span style="color: #6600EE; font-weight: bold">0.86</span>, <span style="color: #6600EE; font-weight: bold">0.01</span>, <span style="color: #6600EE; font-weight: bold">1.02</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">0.02</span>, <span style="color: #333333">-</span><span style="color: #6600EE; font-weight: bold">1.5</span>, <span style="color: #6600EE; font-weight: bold">0.2</span> };
+    std<span style="color: #333333">::</span>vector<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">int</span><span style="color: #333333">&gt;</span>            i1 <span style="color: #333333">=</span> { <span style="color: #0000DD; font-weight: bold">22</span>, <span style="color: #0000DD; font-weight: bold">23</span>, <span style="color: #0000DD; font-weight: bold">24</span>, <span style="color: #0000DD; font-weight: bold">25</span>, <span style="color: #0000DD; font-weight: bold">99</span> };
+    MyDataFrame                 df;
+
+    df.load_data(std<span style="color: #333333">::</span>move(idx), std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;asset&quot;</span>, d1), std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;benchmark&quot;</span>, d2), std<span style="color: #333333">::</span>make_pair(<span style="background-color: #fff0f0">&quot;col_3&quot;</span>, i1));
+
+    treynorr_v<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>  ty_ratio;
+    <span style="color: #008800; font-weight: bold">const</span> <span style="color: #008800; font-weight: bold">auto</span>          result <span style="color: #333333">=</span> df.single_act_visit<span style="color: #333333">&lt;</span><span style="color: #333399; font-weight: bold">double</span>, <span style="color: #333399; font-weight: bold">double</span><span style="color: #333333">&gt;</span>(<span style="background-color: #fff0f0">&quot;asset&quot;</span>, <span style="background-color: #fff0f0">&quot;benchmark&quot;</span>, ty_ratio, <span style="color: #007020">true</span>).get_result();
+
+    assert(fabs(result <span style="color: #333333">-</span> <span style="color: #6600EE; font-weight: bold">0.26761</span>) <span style="color: #333333">&lt;</span> <span style="color: #6600EE; font-weight: bold">0.00001</span>);
+}
+</pre></div>
+
+  <img src="https://github.com/hosseinmoein/DataFrame/blob/master/docs/LionLookingUp.jpg?raw=true" alt="C++ DataFrame"
+       width="200" height="150" style="float:right"/>
+
+</body>
+</html>
+
+<!--
+Local Variables:
+mode:HTML
+tab-width:4
+c-basic-offset:4
+End:
+-->
