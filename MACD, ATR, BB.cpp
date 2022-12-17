@@ -7,16 +7,13 @@ template <typename T> vector<T> MovingAverage(vector<T> &v, int n) {
     vector<T> ans;
     int i = 0, j = 0;
     T sum = 0;
-    while (j < v.size()) {
-        sum += v[j];
-        if (j - i + 1 < n) {
-            j++;
-        } else if (j - i + 1 == n) {
-            ans.push_back(sum / n);
-            sum -= v[i];
-            i++;
-            j++;
-        }
+    for (; j+1<n; j++) sum+=v[j];
+    
+    for (j = n-1; j<v.size(); j++){
+        sum+=v[j];
+        ans.push_back(sum / n);
+        sum -= v[i];
+        i++;
     }
     return ans;
 }
@@ -35,7 +32,7 @@ template <typename T, typename U> vector<T> ExponentialMovingAverage(vector<T> &
 }
 
 //v-> vector of prices, w-> weights for WMA
-template <typename T> vector<T> WeightedMovingAverage(vector<T> &v, vector<T> &w) {
+template <typename T, typename U> vector<T> WeightedMovingAverage(vector<T> &v, vector<U> &w) {
     vector<T> ans;
     T sum = 0;
     for (int i = 0; i < w.size(); i++) {
@@ -109,7 +106,7 @@ template <typename T> vector<T> AverageTrueRange(vector<T> &high, vector<T> &low
 }
 
 //Bollinger Bands from MA - k*std to MA + k*std, set k = 2 for default
-template <typename T> vector<T> BollingerBands(vector<T> &price, int n, T k){
+template <typename T, typename U> vector<T> BollingerBands(vector<T> &price, int n, U k){
     vector<T> BB, upper, lower;
     T ma, std;
     for(int i = 0; i < price.size(); i++){
