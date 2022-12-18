@@ -1,4 +1,5 @@
 #include "MACD, ATR, BB.h"
+#include "SMA Crossovers.h"
 
 #include <DataFrame/DataFrame.h>
 #include <DataFrame/Utils/DateTime.h>
