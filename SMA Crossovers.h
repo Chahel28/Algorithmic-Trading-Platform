@@ -32,7 +32,7 @@ template <typename T> vector<T> simpleMovingAverage(vector<T> v, int ws){// `v` 
     
     
 }
-template <typename T> T maCrossover(vector<T>  v, int w1, int w2){// `v` vector of prices, `w1` window of larger MA, `w2` window of smaller MA
+template <typename T> vector<pair<T,bool>> maCrossover(vector<T>  v, int w1, int w2){// `v` vector of prices, `w1` window of larger MA, `w2` window of smaller MA
     vector<T> smallMA, bigMA; //big and small window moving average vectors
     for(int i = 0; i<min(w1,w2); i++){ 
         smallMA.push_back(v[i]);
@@ -52,21 +52,16 @@ template <typename T> T maCrossover(vector<T>  v, int w1, int w2){// `v` vector 
     for(int i = 0; i<v.size(); i++){
         diff.push_back(bigMA[i] - smallMA[i]);
     }
-    vector<int> buySell;
+    vector<pair<T, bool>> buySell;
     for(int i = 1; i<diff.size(); i++){
         if(diff[i] < 0 && diff[i-1] > 0){ // buy price , golden cross
-            buySell.push_back(v[i]);
+            buySell.push_back({v[i], true}); // true implies its a buy signal at price of `v[i]`
         }
         else if(diff[i] > 0 && diff[i-1] < 0){ // sell price, death cross
-            buySell.push_back(v[i]);
+            buySell.push_back({v[i], false});// false implies its a sell signal at price of `v[i]`
         }
     }
-    int profit = 0;
-    //  every even index consists of buy prices, every odd index consists of sell prices
-    for(int i = 0; i<(int)buySell.size() - 1; i+=2){
-        profit += buySell[i]-buySell[i+1];
-    }
-    // cerr<<profit;
     
-return profit;    
+return buySell;    
 }
+
