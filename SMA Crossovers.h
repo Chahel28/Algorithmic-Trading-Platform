@@ -6,7 +6,6 @@
 #include <unordered_set>
 #include <iomanip>
 using namespace std;
-#define int long long
 
 template <typename T> void disp(vector<T> v){ // just to display a vector
     for(auto thing : v){
