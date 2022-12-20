@@ -1,3 +1,4 @@
+#include "Backtest.h"
 #include "MACD, ATR, BB.h"
 #include "SMA Crossovers.h"
 

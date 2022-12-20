@@ -7,10 +7,4 @@ endif (POLICY CMP0048)
 project(ATP)
 
 add_subdirectory(DataFrame)
-
-add_executable(Demo Demo.cpp)
-
-add_executable(Exchange Exchange.cpp)
-
-add_executable(Test Backtest.cpp)
-target_link_libraries(Test DataFrame)
+add_subdirectory(src)
