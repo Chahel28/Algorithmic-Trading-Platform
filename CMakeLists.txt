@@ -8,7 +8,9 @@ project(ATP)
 
 add_subdirectory(DataFrame)
 
-add_executable(demo demo.cpp)
+add_executable(Demo Demo.cpp)
 
-add_executable(test backtest.cpp)
-target_link_libraries(test DataFrame)
+add_executable(Exchange Exchange.cpp)
+
+add_executable(Test Backtest.cpp)
+target_link_libraries(Test DataFrame)

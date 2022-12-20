@@ -1,56 +1,54 @@
 #pragma once
 
+#include <cmath>
 #include <vector>
 
 // v-> vector of prices, n-> size of MA window
-template <typename T>
-std::vector<T> MovingAverage(std::vector<T> &v, int n) {
-    std::vector<T> ans;
-    T sum = 0;
+std::vector<double> MovingAverage(std::vector<double> &v, int n) {
+    std::vector<double> ans(v.size());
+    double sum = 0;
     for (int i = 0; i < n; i++) {
         sum += v[i];
+        ans[i] = sum / (i + 1);
     }
-    ans.push_back(sum / n);
 
-    for (i = n; i < v.size(); i++) {
+    for (int i = n; i < v.size(); i++) {
         sum += v[i] - v[i - n];
-        ans.push_back(sum / n);
+        ans[i] = sum / n;
     }
 
     return ans;
 }
 
 // v-> vector of prices, n-> size of EMA window, k-> smoothing factor = x/(n+1)
-template <typename T, typename U>
-std::vector<T> ExponentialMovingAverage(std::vector<T> &v, int n, U x) {
-    T k = (double)x / (n + 1);
-    T ema = v[0];
-    std::vector<T> ans;
-    ans.push_back(ema);
+std::vector<double> ExponentialMovingAverage(std::vector<double> &v, int n, double x = 2) {
+    double k = x / (n + 1), ema = v[0];
+    std::vector<double> ans(v.size());
+    ans[0] = ema;
 
     for (int i = 1; i < v.size(); i++) {
         ema = (v[i] - ema) * k + ema;
-        ans.push_back(ema);
+        ans[i] = ema;
     }
 
     return ans;
 }
 
 // v-> vector of prices, w-> weights for WMA
-template <typename T, typename U>
-std::vector<T> WeightedMovingAverage(std::vector<T> &v, std::vector<U> &w) {
-    std::vector<T> ans;
-    T sum = 0;
+std::vector<double> WeightedMovingAverage(std::vector<double> &v, std::vector<double> &w) {
+    std::vector<double> ans(v.size());
+    double sum = 0;
     for (int i = 0; i < w.size(); i++) {
         sum += w[i];
+        ans[i] = std::nan(""); // not a number
     }
 
     for (int i = w.size() - 1; i < v.size(); i++) {
-        T temp = 0;
+        double temp = 0;
         for (int j = 0; j < w.size(); j++) {
             temp += v[i - j] * w[j];
         }
-        ans.push_back(temp / sum);
+        ans[i] = temp / sum;
     }
 
     return ans;
@@ -59,31 +57,26 @@ std::vector<T> WeightedMovingAverage(std::vector<T> &v, std::vector<U> &w) {
 // smoothning factor = x/(n+1) for EMA
 // EMA1-> fast EMA, EMA2-> slow EMA
 // signal line is MA of MACD (n3), hist is MACD-EMA(signal line), 0 for i<n3-1
-template <typename T>
-std::vector<T> MACD(std::vector<T> &price, int n1, int n2, int n3, int x) {
-    std::vector<T> MACD;
-    T ema1 = price[0], ema2 = price[0];
-    MACD.push_back(ema1 - ema2);
+// hist > 0 -> bullish, hist < 0 -> bearish
+std::vector<double> MACD(std::vector<double> &price, int n1 = 12, int n2 = 26, int n3 = 9, double x = 2) {
+    double ema1 = price[0], ema2 = price[0];
+    std::vector<double> MACD(price.size());
+    MACD[0] = ema1 - ema2;
 
     for (int i = 1; i < price.size(); i++) {
         ema1 = (price[i] - ema1) * x / (n1 + 1) + ema1;
         ema2 = (price[i] - ema2) * x / (n2 + 1) + ema2;
-        MACD.push_back(ema1 - ema2);
+        MACD[i] = ema1 - ema2;
     }
 
-    std::vector<T> signal, hist;
-    for (int i = 0; i < n3 - 1; i++) {
-        signal.push_back(0);
-        hist.push_back(0);
-    }
-
+    std::vector<double> signal(price.size()), hist(price.size());
     for (int i = n3 - 1; i < MACD.size(); i++) {
-        T sum = 0;
+        double sum = 0;
         for (int j = i - n3 + 1; j <= i; j++) {
             sum += MACD[j];
         }
-        signal.push_back(sum / n3);
-        hist.push_back(MACD[i] - signal[i]);
+        signal[i] = sum / n3;
+        hist[i] = MACD[i] - signal[i];
     }
 
     return hist;
@@ -91,33 +84,27 @@ std::vector<T> MACD(std::vector<T> &price, int n1, int n2, int n3, int x) {
 
 // ATR = EMA of TR (n), smoothening factor = x/(n+1)
 // TR = max(high-low, abs(high-prev_close), abs(low-prev_close))
-template <typename T>
-std::vector<T> AverageTrueRange(std::vector<T> &high, std::vector<T> &low, std::vector<T> &close, int n, int x) {
-    T tr = high[i] - low[i], atr = tr;
-    std::vector<T> ATR = {atr};
+std::vector<double> AverageTrueRange(std::vector<double> &high, std::vector<double> &low, std::vector<double> &close, int n, int x) {
+    double tr = high[0] - low[0], atr = tr;
+    std::vector<double> ATR(high.size());
+    ATR[0] = atr;
 
     for (int i = 1; i < high.size(); i++) {
-        tr = max(max(high[i] - low[i], abs(high[i] - close[i - 1])), abs(low[i] - close[i - 1]));
+        tr = std::max(std::max(high[i] - low[i], std::abs(high[i] - close[i - 1])), std::abs(low[i] - close[i - 1]));
         atr = (tr - atr) * x / (n + 1) + atr;
-        ATR.push_back(atr);
+        ATR[i] = atr;
     }
 
     return ATR;
 }
 
-// Bollinger Bands from MA - k*std to MA + k*std, set k = 2 for default
-template <typename T, typename U>
-std::vector<T> BollingerBands(std::vector<T> &price, int n, U k) {
-    std::vector<T> BB, upper, lower;
-    T ma, std;
-    for (int i = 0; i < n - 1; i++) {
-        BB.push_back(0);
-        upper.push_back(0);
-        lower.push_back(0);
-    }
+// Bollinger Bands from MA - k*std to MA + k*std
+std::vector<int> BollingerBands(std::vector<double> &price, int n, double k = 2) {
+    std::vector<int> BB(price.size());
+    double ma, std;
 
     for (int i = n - 1; i < price.size(); i++) {
-        T sum = 0;
+        double sum = 0;
         for (int j = i - n + 1; j <= i; j++) {
             sum += price[j];
         }
@@ -127,11 +114,13 @@ std::vector<T> BollingerBands(std::vector<T> &price, int n, U k) {
         for (int j = i - n + 1; j <= i; j++) {
             sum += (price[j] - ma) * (price[j] - ma);
         }
-
         std = sqrt(sum / n);
-        BB.push_back((price[i] - ma) / (k * std));
-        upper.push_back(ma + k * std);
-        lower.push_back(ma - k * std);
+
+        if (price[i] > ma + k * std) {
+            BB[i] = 1;
+        } else if (price[i] < ma - k * std) {
+            BB[i] = -1;
+        } // else BB[i] = 0;
     }
 
     return BB;
