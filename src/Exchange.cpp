@@ -3,6 +3,7 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <fstream>
 
 /*
 FIFO Exchange
@@ -48,7 +49,7 @@ void Start_Exchange() {
 
 long long Get_Time() {
     auto time = duration_cast<milliseconds>(high_resolution_clock::now().time_since_epoch()).count();
-    return time - time_of_start_of_exchange;
+    return (time - time_of_start_of_exchange);
 }
 
 struct Limit_Order {
@@ -63,10 +64,14 @@ struct Limit_Order {
 
     // FIFO:
     bool operator<(const Limit_Order &other) const {
-        if (price != other.price) {
-            return (price > other.price);
+        if (buy){
+            if (price != other.price) return price > other.price;
+            else return time < other.time;
         }
-        return (time < other.time);
+        else{
+            if (price != other.price) return price < other.price;
+            else return time < other.time;
+        }
     }
 
     /*
@@ -86,8 +91,8 @@ class Exchange {
 private:
     std::set<Limit_Order> buy_orders, sell_orders;
     long long ask_price, ask_quantity, bid_price, bid_quantity, total_quantity_ask, total_quantity_bid;
-
     std::map<long long, long long> ask_prices, bid_prices;
+
 
     void Update_Market_Values() {
         if (buy_orders.empty()) {
@@ -95,9 +100,7 @@ private:
             bid_quantity = 0;
             total_quantity_bid = 0;
         } else {
-            auto it = buy_orders.end();
-            it--;
-            bid_price = it->price;
+            bid_price = buy_orders.begin()->price;
             bid_quantity = bid_prices[bid_price];
         }
 
@@ -120,6 +123,7 @@ private:
     }
 
 public:
+    
     void Fill_Market_Order(bool buy, long long quantity) {
         long long fill_price = -1, fill_quantity = 0, temp_quantity, current_quantity, temp_time;
         if (buy) {
@@ -150,6 +154,8 @@ public:
                 } else {
                     sell_orders.erase(it);
                     sell_orders.insert(Limit_Order(false, fill_price, current_quantity, temp_time));
+                    ask_prices[fill_price] -= temp_quantity;
+                    Update_Market_Values();
                 }
             }
             if (fill_quantity > 0) Broadcast(fill_price, fill_quantity);
@@ -160,8 +166,7 @@ public:
             }
 
             while (!buy_orders.empty() && quantity > 0) {
-                auto it = buy_orders.end();
-                it--;
+                auto it = buy_orders.begin();
                 fill_price = it->price;
                 current_quantity = it->quantity;
                 temp_time = it->time;
@@ -182,6 +187,8 @@ public:
                 } else {
                     buy_orders.erase(it);
                     buy_orders.insert(Limit_Order(true, fill_price, current_quantity, temp_time));
+                    bid_prices[fill_price] -= temp_quantity;
+                    Update_Market_Values();
                 }
             }
             if (fill_quantity > 0) Broadcast(fill_price, fill_quantity);
@@ -242,6 +249,8 @@ public:
                 } else {
                     sell_orders.erase(it);
                     sell_orders.insert(Limit_Order(false, fill_price, current_quantity, temp_time));
+                    ask_prices[fill_price] -= fill_quantity;
+                    Update_Market_Values();
                 }
             }
             if (quantity > 0)
@@ -250,8 +259,7 @@ public:
                 Broadcast(fill_price, fill_quantity);
         } else {
             while (!buy_orders.empty() && quantity > 0) {
-                auto it = buy_orders.end();
-                it--;
+                auto it = buy_orders.begin();
                 if (it->price < price) break;
                 fill_price = it->price;
                 temp_time = it->time;
@@ -273,6 +281,8 @@ public:
                 } else {
                     buy_orders.erase(it);
                     buy_orders.insert(Limit_Order(true, fill_price, current_quantity, temp_time));
+                    bid_prices[fill_price] -= fill_quantity;
+                    Update_Market_Values();
                 }
             }
             if (quantity > 0)
@@ -291,7 +301,7 @@ public:
         bid_prices.clear();
         buy_orders.clear();
         sell_orders.clear();
-        // ifstream fin("Pending_Orders.txt");
+        // std::ifstream fin("Pending_Orders.txt");
         // while(fin){
         //     bool buy;
         //     long long price, quantity, time;
@@ -302,7 +312,9 @@ public:
     }
 
     // ~Exchange(){
-    //     ofstream fout("Pending_Orders.txt");
+    //     std::cout << "Exchange is Closing; All Pending Orders are being saved to Pending_Orders.txt" << '\n';
+    //     std::cout << "Last Broadcasted Values: " << bid_price << " " << bid_quantity << " " << ask_price << " " << ask_quantity << '\n';
+    //     std::ofstream fout("Pending_Orders.txt");
     //     for(auto it:buy_orders) fout << it.buy << "\t" << it.price << "\t" << it.quantity << "\t" << it.time << '\n';
     //     for(auto it:sell_orders) fout << it.buy << "\t" << it.price << "\t" << it.quantity << "\t" << it.time << '\n';
     //     fout.close();
@@ -314,8 +326,8 @@ public:
 };
 
 int main() {
-    Exchange exchange;
     Start_Exchange();
+    Exchange exchange;
     while (true) {
         short int order_type;
         std::cin >> order_type;
