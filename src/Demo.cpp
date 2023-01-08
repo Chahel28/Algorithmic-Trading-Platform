@@ -1,13 +1,13 @@
-#include "MACD, ATR, BB.h"
-
 #include <iostream>
+
+#include "MACD, ATR, BB.h"
 
 int main() {
     // n -> total number of days
     int n;
     std::cin >> n;
 
-    // for Bolinger Bands and MACD
+    // for Bollinger Bands and MACD
     std::vector<double> price(n);
     for (int i = 0; i < n; i++) {
         std::cin >> price[i];

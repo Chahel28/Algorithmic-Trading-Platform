@@ -1,10 +1,10 @@
-#include "SMA Crossovers.h"
-
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
+
+#include "SMA Crossovers.h"
 
 template <typename T>
 void disp(std::vector<T> v) { // just to display a vector

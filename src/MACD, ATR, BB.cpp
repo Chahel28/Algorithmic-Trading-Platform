@@ -1,6 +1,7 @@
-#include "MACD, ATR, BB.h"
-
+#include <algorithm>
 #include <cmath>
+
+#include "MACD, ATR, BB.h"
 
 // v-> vector of prices, n-> size of MA window
 std::vector<double> MovingAverage(std::vector<double> &v, int n) {
@@ -113,7 +114,7 @@ std::vector<int> BollingerBands(std::vector<double> &price, int n, double k) {
         for (int j = i - n + 1; j <= i; j++) {
             sum += (price[j] - ma) * (price[j] - ma);
         }
-        std = sqrt(sum / n);
+        std = std::sqrt(sum / n);
 
         if (price[i] > ma + k * std) {
             BB[i] = 1;
