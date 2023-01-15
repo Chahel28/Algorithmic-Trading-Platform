@@ -116,6 +116,7 @@ void showOrderBook(){ // displays currently active bids and ask prices, along wi
 
 
 void matchFifo(){ // calling this function runs the Fifo matching algorith. This function is "automatically" run when a buy order/sell order is placed
+    clear();
     showOrderBook();
     if(bids.size() == 0 || asks.size() == 0){return;} // so you wont have some access error
     // The below Matching Code is for FIFO
@@ -176,8 +177,7 @@ freopen("output.txt","w",stdout);
 
 
 while(true){
-
-    string s; cin>>s; 
+    string s; cin>>s;
     if(s == "stop"){
        clear();
        cout<<"Stopped"; 
@@ -201,4 +201,3 @@ while(true){
 
 return 0;
 }
-
