@@ -12,6 +12,10 @@ using namespace hmdf;
 using StrDataFrame = StdDataFrame<std::string>;
 using DTDataFrame = StdDataFrame<DateTime>;
 
+inline double seconds_to_years(const double seconds) {
+    return seconds / (365.24 * 24 * 60 * 60);
+}
+
 // This is a simple ROI calculator, returns the %ROI of a strategy
 // signal > 0 -> long, signal < 0 -> short, signal == 0 -> flat
 template <typename T>
@@ -19,16 +23,16 @@ double roi(const std::vector<double> &prices, const std::vector<T> &signal) {
     // giving a return of (prices[1] - prices[0]) / prices[0]
     double ret = 100;
     bool position = false;
-    for (int i = 0; i < prices.size() - 1; ++i) { // ignore buy signal on final tick
-        if (signal[i] > 0 && !position) {
+    for (int i = 1; i < prices.size() - 1; ++i) { // ignore buy signal on final tick
+        if (signal[i - 1] > 0 && !position) {
             position = true;
             // std::cout << "Buy: " << prices[i] << '\t';
-        } else if (signal[i] < 0 && position) {
+        } else if (signal[i - 1] < 0 && position) {
             position = false;
             // std::cout << "Sell: " << prices[i] << '\n';
         }
 
-        if (position) {
+        if (position) { // buy now if previous signal was a buy
             ret *= prices[i + 1] / prices[i];
         }
     }
@@ -48,7 +52,7 @@ int main() {
     ibm.read("DataFrame/data/DT_IBM.csv", io_format::csv2);
     auto close = ibm.get_column<double>("IBM_Close");
     auto index = ibm.get_index();
-    auto years = (index.back() - index.front()) / (365.24 * 24 * 60 * 60);
+    auto years = seconds_to_years(index.back() - index.front());
 
     std::cout << "Bollinger Bands (1 sigma) CAGR (Rate of Return) for IBM: " << cagr(close, BollingerBands(close, 20, 1), years) << "%\n";
     std::cout << "Bollinger Bands (2 sigma) CAGR (Rate of Return) for IBM: " << cagr(close, BollingerBands(close, 20, 2), years) << "%\n";
