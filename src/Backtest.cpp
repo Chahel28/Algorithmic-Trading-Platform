@@ -16,12 +16,32 @@ inline double seconds_to_years(const double seconds) {
     return seconds / (365.24 * 24 * 60 * 60);
 }
 
+double mean(const std::vector<double> &values) {
+    double sum = 0;
+    for (auto &val : values) {
+        sum += val;
+    }
+    return sum / values.size();
+}
+
+double stdev(const std::vector<double> &values, const double mean) {
+    double sum = 0;
+    for (auto &val : values) {
+        sum += std::pow(val - mean, 2);
+    }
+    return std::sqrt(sum / values.size());
+}
+
+double stdev(const std::vector<double> &values) {
+    return stdev(values, mean(values));
+}
+
 // This is a simple ROI calculator, returns the %ROI of a strategy
 // signal > 0 -> long, signal < 0 -> short, signal == 0 -> flat
 template <typename T>
-double roi(const std::vector<double> &prices, const std::vector<T> &signal) {
-    // giving a return of (prices[1] - prices[0]) / prices[0]
-    double ret = 100;
+std::vector<double> returns(const std::vector<double> &prices, const std::vector<T> &signal) {
+    std::vector<double> roi(prices.size());
+
     bool position = false;
     for (int i = 1; i < prices.size() - 1; ++i) { // ignore buy signal on final tick
         if (signal[i - 1] > 0 && !position) {
@@ -32,42 +52,57 @@ double roi(const std::vector<double> &prices, const std::vector<T> &signal) {
             // std::cout << "Sell: " << prices[i] << '\n';
         }
 
-        if (position) { // buy now if previous signal was a buy
-            ret *= prices[i + 1] / prices[i];
-        }
+        // buy now if previous signal was a buy
+        roi[i] = position ? (100 + roi[i - 1]) * prices[i + 1] / prices[i] - 100
+                          : roi[i - 1];
     }
+    roi[roi.size() - 1] = roi[roi.size() - 2];
 
-    return ret - 100;
+    return roi;
 }
 
 // This is a simple CAGR calculator, returns the %CAGR of a strategy
 // signal > 0 -> long, signal < 0 -> short, signal == 0 -> flat
-template <typename T>
-double cagr(const std::vector<double> &prices, const std::vector<T> &signal, double years) {
-    return 100 * std::pow((roi(prices, signal) + 100) / 100, 1 / years) - 100;
+double cagr(const std::vector<double> &returns, double years) {
+    return 100 * std::pow(mean(returns) / 100 + 1, 1 / years) - 100;
+}
+
+std::vector<double> risk_free_returns(const std::vector<double> &returns, const double risk_free_rate) {
+    std::vector<double> risk_free_returns(returns);
+    for (auto &i : risk_free_returns) {
+        i -= risk_free_rate;
+    }
+    return risk_free_returns;
+}
+
+double sharpe_ratio(const std::vector<double> &returns, const double risk_free_rate) {
+    auto risk_free = risk_free_returns(returns, risk_free_rate);
+    return mean(risk_free) / stdev(risk_free);
 }
 
 int main() {
-    DTDataFrame ibm;
-    ibm.read("DataFrame/data/DT_IBM.csv", io_format::csv2);
-    auto close = ibm.get_column<double>("IBM_Close");
-    auto index = ibm.get_index();
-    auto years = seconds_to_years(index.back() - index.front());
+    for (std::string ticker : {"IBM", "AAPL"}) {
+        DTDataFrame df;
+        df.read(("DataFrame/data/DT_" + ticker + ".csv").c_str(), io_format::csv2);
 
-    std::cout << "Bollinger Bands (1 sigma) CAGR (Rate of Return) for IBM: " << cagr(close, BollingerBands(close, 20, 1), years) << "%\n";
-    std::cout << "Bollinger Bands (2 sigma) CAGR (Rate of Return) for IBM: " << cagr(close, BollingerBands(close, 20, 2), years) << "%\n";
-    std::cout << "MACD Crossover CAGR (Rate of Return) for IBM: " << cagr(close, MACD(close, 12, 26, 9), years) << "%\n";
-    std::cout << "SMA-20 SMA-50 Crossover CAGR (Rate of Return) for IBM: " << cagr(close, maCrossover(close, 20, 50), years) << "%\n\n";
+        auto close = df.get_column<double>((ticker + "_Close").c_str());
+        auto index = df.get_index();
+        auto years = seconds_to_years(index.back() - index.front());
 
-    DTDataFrame aapl;
-    aapl.read("DataFrame/data/DT_AAPL.csv", io_format::csv2);
-    close = aapl.get_column<double>("AAPL_Close");
-    index = aapl.get_index();
-    years = (index.back() - index.front()) / (365.24 * 24 * 60 * 60);
-    std::cout << "Bollinger Bands (1 sigma) CAGR (Rate of Return) for AAPL: " << cagr(close, BollingerBands(close, 20, 1), years) << "%\n";
-    std::cout << "Bollinger Bands (2 sigma) CAGR (Rate of Return) for AAPL: " << cagr(close, BollingerBands(close, 20, 2), years) << "%\n";
-    std::cout << "MACD Crossover CAGR (Rate of Return) for AAPL: " << cagr(close, MACD(close, 12, 26, 9), years) << "%\n";
-    std::cout << "SMA-20 SMA-50 Crossover CAGR (Rate of Return) for AAPL: " << cagr(close, maCrossover(close, 20, 50), years) << "%\n\n";
+        std::cout << ticker << " metrics\n";
+
+        auto rets = returns(close, BollingerBands(close, 20, 1));
+        double cagr_val = cagr(rets, years), sharpe = sharpe_ratio(rets);
+        std::cout << "  Bollinger Bands (1 sigma) : CAGR = " << cagr_val << "%, Sharpe Ratio = " << sharpe << "\n";
+
+        rets = returns(close, MACD(close, 12, 26, 9));
+        cagr_val = cagr(rets, years), sharpe = sharpe_ratio(rets);
+        std::cout << "  MACD Crossover            : CAGR = " << cagr_val << "%, Sharpe Ratio = " << sharpe << "\n";
+
+        rets = returns(close, maCrossover(close, 20, 50));
+        cagr_val = cagr(rets, years), sharpe = sharpe_ratio(rets);
+        std::cout << "  SMA-20 SMA-50 Crossover   : CAGR = " << cagr_val << "%, Sharpe Ratio = " << sharpe << "\n\n";
+    }
 
     return 0;
 }
