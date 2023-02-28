@@ -80,6 +80,27 @@ double sharpe_ratio(const std::vector<double> &returns, const double risk_free_r
     return mean(risk_free) / stdev(risk_free);
 }
 
+double max_drawdown(const std::vector<double> &returns) {
+    double peak = returns[0];
+    double max_drawdown = 0.0;
+    for(int i = 1; i < returns.size(); i++) {
+        double drawdown = (peak - returns[i]) / peak;
+        max_drawdown = std::max(max_drawdown, drawdown);
+        peak = std::max(peak, returns[i]);
+    }
+    return max_drawdown;
+}
+
+double hit_ratio(const std::vector<double>& returns) {
+    int total_trades = returns.size();
+    int profitable_trades = 0;
+    for(const auto &return_val : returns) {
+        if (return_val > 0)
+            profitable_trades++;
+    }
+    return (double)profitable_trades / total_trades;
+}
+
 int main() {
     for (std::string ticker : {"IBM", "AAPL"}) {
         DTDataFrame df;
@@ -92,16 +113,16 @@ int main() {
         std::cout << ticker << " metrics\n";
 
         auto rets = returns(close, BollingerBands(close, 20, 1));
-        double cagr_val = cagr(rets, years), sharpe = sharpe_ratio(rets);
-        std::cout << "  Bollinger Bands (1 sigma) : CAGR = " << cagr_val << "%, Sharpe Ratio = " << sharpe << "\n";
+        double cagr_val = cagr(rets, years), sharpe = sharpe_ratio(rets), max_drawdown_val = max_drawdown(rets), hit_ratio_val = hit_ratio(rets);
+        std::cout << "  Bollinger Bands (1 sigma) : CAGR = " << cagr_val << "%, Sharpe Ratio = " << sharpe << " Max Drawdown = " << max_drawdown_val << " Hit Ratio = " << hit_ratio_val << "\n";
 
         rets = returns(close, MACD(close, 12, 26, 9));
-        cagr_val = cagr(rets, years), sharpe = sharpe_ratio(rets);
-        std::cout << "  MACD Crossover            : CAGR = " << cagr_val << "%, Sharpe Ratio = " << sharpe << "\n";
+        cagr_val = cagr(rets, years), sharpe = sharpe_ratio(rets), max_drawdown_val = max_drawdown(rets), hit_ratio_val = hit_ratio(rets);
+        std::cout << "  MACD Crossover            : CAGR = " << cagr_val << "%, Sharpe Ratio = " << sharpe << " Max Drawdown = " << max_drawdown_val << " Hit Ratio = " << hit_ratio_val << "\n";
 
         rets = returns(close, maCrossover(close, 20, 50));
-        cagr_val = cagr(rets, years), sharpe = sharpe_ratio(rets);
-        std::cout << "  SMA-20 SMA-50 Crossover   : CAGR = " << cagr_val << "%, Sharpe Ratio = " << sharpe << "\n\n";
+        cagr_val = cagr(rets, years), sharpe = sharpe_ratio(rets), max_drawdown_val = max_drawdown(rets), hit_ratio_val = hit_ratio(rets);
+        std::cout << "  SMA-20 SMA-50 Crossover   : CAGR = " << cagr_val << "%, Sharpe Ratio = " << sharpe << " Max Drawdown = " << max_drawdown_val << " Hit Ratio = " << hit_ratio_val << "\n\n";
     }
 
     return 0;
