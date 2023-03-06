@@ -33,7 +33,7 @@ BP -> Bid Price
 BQ -> Bid Quantity
 FP -> Fill Price
 FQ -> Fill Quantity
-(If no fill, FP and FQ are not present)
+(If no fill, FP and FQ are -1 and -1)
 (If multiple fills, multiple lines are printed)
 
 If market order is not filled, print "Market order quantity is more than available quantity" and trade with available quantity
@@ -128,7 +128,7 @@ public:
     }
 
     void Broadcast() {
-        std::cout << Get_Time() << "\t" << ask_price << "\t" << ask_quantity << "\t" << bid_price << "\t" << bid_quantity << "\n";
+        std::cout << Get_Time() << "\t" << ask_price << "\t" << ask_quantity << "\t" << bid_price << "\t" << bid_quantity << "\t" << -1 << "\t" << -1 << "\n";
     }
     
     void Fill_Market_Order(bool buy, long long quantity) {
