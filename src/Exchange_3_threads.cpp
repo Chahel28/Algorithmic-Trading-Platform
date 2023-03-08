@@ -6,6 +6,32 @@
 #include <fstream>
 #include <queue>
 #include <thread>
+#include <random>
+#include <mutex>
+#include <ext/pb_ds/assoc_container.hpp>
+#include <ext/pb_ds/tree_policy.hpp>
+
+std::mutex m;
+
+using namespace __gnu_pbds;
+using namespace std;
+
+typedef tree<int, null_type, less<int>, rb_tree_tag, tree_order_statistics_node_update> ordered_set;
+mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
+
+//#define double long 
+
+int gr(int r){
+   uniform_int_distribution<int> uid(0,r-1);
+   int val = uid(rng);
+   return val+1;
+}
+
+int glr(int l, int r){
+    int dif = r-l+1;
+    int x = gr(dif) + l-1;
+    return x;
+}
 
 /*
 FIFO Exchange
@@ -26,7 +52,7 @@ Q -> Quantity
 Broadcast Format:
 T AP AQ BP BQ FP FQ
 
-T -> Time in milliseconds from the start of the exchange
+T -> Time in milliseconds from the start of the _exchange
 AP -> Ask Price
 AQ -> Ask Quantity
 BP -> Bid Price
@@ -38,10 +64,16 @@ FQ -> Fill Quantity
 
 If market order is not filled, print "Market order quantity is more than available quantity" and trade with available quantity
 
-Input -1 to end the exchange
+Input -1 to end the _exchange
 */
 
 long long time_of_start_of_exchange = 0;
+bool bot1_flag = true;
+// default_random_engine rd0(time(0));
+// std::uniform_int_distribution<int> orderType(0,1);
+// std::uniform_int_distribution<int> buySell(0,1);
+// std::uniform_int_distribution<int> quantity(1,10);
+// std::uniform_int_distribution<int> price(100,200);
 
 using namespace std::chrono;
 
@@ -56,8 +88,9 @@ long long Get_Time() {
 
 struct Limit_Order {
     bool buy; // true -> buy, false -> sell
-    long long price, quantity, time;
-    Limit_Order(bool buy, long long price, long long quantity, long long time) {
+    long double price;
+    long long quantity, time;
+    Limit_Order(bool buy, long double price, long long quantity, long long time) {
         this->buy = buy;
         this->price = price;
         this->quantity = quantity;
@@ -89,16 +122,29 @@ struct Limit_Order {
     */
 };
 
+struct Broad {
+    long double ask_price, bid_price, fill_price;
+    long long ask_quantity, bid_quantity, fill_quantity;
+    Broad(long double ap, long long aq, long double bp, long long bq, long double fp, long long fq) {
+        ask_price = ap;
+        ask_quantity = aq;
+        bid_price = bp;
+        bid_quantity = bq;
+        fill_price = fp;
+        fill_quantity = fq;
+    }
+};
+
+
 
 std::queue<Limit_Order> pending_orders;
-std::queue<std::pair<long long, long long>> broadcast_queue;
+std::queue<Broad> broadcast_queue;
 
 
 class Exchange {
 private:
     std::set<Limit_Order> buy_orders, sell_orders;
-    long long ask_price, ask_quantity, bid_price, bid_quantity, total_quantity_ask, total_quantity_bid;
-    std::map<long long, long long> ask_prices, bid_prices;
+    std::map<long double, long long> ask_prices, bid_prices;
 
 
     void Update_Market_Values() {
@@ -122,17 +168,16 @@ private:
     }
 
 public:
+    long double bid_price, ask_price;
+    long long ask_quantity, bid_quantity, total_quantity_ask, total_quantity_bid;
 
-    void Broadcast(long long fill_price, long long fill_quantity) {
-        std::cout << Get_Time() << "\t" << ask_price << "\t" << ask_quantity << "\t" << bid_price << "\t" << bid_quantity << "\t" << fill_price << "\t" << fill_quantity << "\n";
-    }
-
-    void Broadcast() {
-        std::cout << Get_Time() << "\t" << ask_price << "\t" << ask_quantity << "\t" << bid_price << "\t" << bid_quantity << "\t" << -1 << "\t" << -1 << "\n";
+    void Broadcast(Broad b) {
+        std::cout << Get_Time() << "\t" << b.ask_price << "\t" << b.ask_quantity << "\t" << b.bid_price << "\t" << b.bid_quantity << "\t" << b.fill_price << "\t" << b.fill_quantity << "\n";
     }
     
     void Fill_Market_Order(bool buy, long long quantity) {
-        long long fill_price = -1, fill_quantity = 0, temp_quantity, current_quantity, temp_time;
+        long double fill_price = -1;
+        long long fill_quantity = 0, temp_quantity, current_quantity, temp_time;
         if (buy) {
             if (quantity > total_quantity_ask) {
                 quantity = total_quantity_ask;
@@ -156,7 +201,7 @@ public:
                     if (ask_prices[fill_price] == 0) {
                         ask_prices.erase(fill_price);
                         //Broadcast(fill_price, fill_quantity);
-                        broadcast_queue.push({fill_price, fill_quantity});
+                        broadcast_queue.push(Broad(ask_price, ask_quantity, bid_price, bid_quantity, fill_price, fill_quantity));
                         fill_quantity = 0;
                     }
                 } else {
@@ -167,7 +212,7 @@ public:
                 }
             }
             if (fill_quantity > 0) //Broadcast(fill_price, fill_quantity);
-                broadcast_queue.push({fill_price, fill_quantity});
+                broadcast_queue.push(Broad(ask_price, ask_quantity, bid_price, bid_quantity, fill_price, fill_quantity));
         } else {
             if (quantity > total_quantity_bid) {
                 quantity = total_quantity_bid;
@@ -191,7 +236,7 @@ public:
                     if (bid_prices[fill_price] == 0) {
                         bid_prices.erase(fill_price);
                         //Broadcast(fill_price, fill_quantity);
-                        broadcast_queue.push({fill_price, fill_quantity});
+                        broadcast_queue.push(Broad(ask_price, ask_quantity, bid_price, bid_quantity, fill_price, fill_quantity));
                         fill_quantity = 0;
                     }
                 } else {
@@ -202,11 +247,11 @@ public:
                 }
             }
             if (fill_quantity > 0) //Broadcast(fill_price, fill_quantity);
-                broadcast_queue.push({fill_price, fill_quantity});
+                broadcast_queue.push(Broad(ask_price, ask_quantity, bid_price, bid_quantity, fill_price, fill_quantity));
         }
     }
 
-    void Add_Limit_Order(bool buy, long long price, long long quantity, long long time) {
+    void Add_Limit_Order(bool buy, long double price, long long quantity, long long time) {
         bool broadcast = false;
         if (buy) {
             if (price >= ask_price) {
@@ -230,12 +275,13 @@ public:
         if (broadcast) {
             Update_Market_Values();
             // Broadcast();
-            broadcast_queue.push({-1, 0});
+            broadcast_queue.push(Broad(ask_price, ask_quantity, bid_price, bid_quantity, -1, -1));
         }
     }
 
-    void Match(bool buy, long long price, long long quantity, long long time) {
-        long long fill_price = -1, fill_quantity = 0, temp_quantity, current_quantity, temp_time;
+    void Match(bool buy, long double price, long long quantity, long long time) {
+        long double fill_price = -1;
+        long long fill_quantity = 0, temp_quantity, current_quantity, temp_time;
 
         if (buy) {
             while (!sell_orders.empty() && quantity > 0) {
@@ -248,15 +294,16 @@ public:
                 quantity -= temp_quantity;
                 total_quantity_ask -= temp_quantity;
                 current_quantity -= temp_quantity;
-                fill_quantity += temp_quantity;
-                if (current_quantity == 0) {
+                fill_quantity = temp_quantity;
+                if (current_quantity <= 0) {
                     sell_orders.erase(it);
                     ask_prices[fill_price] -= fill_quantity;
                     Update_Market_Values();
-                    if (ask_prices[fill_price] == 0) {
+                    if (ask_prices[fill_price] <= 0) {
                         ask_prices.erase(fill_price);
                         //Broadcast(fill_price, fill_quantity);
-                        broadcast_queue.push({fill_price, fill_quantity});
+                        Update_Market_Values();
+                        broadcast_queue.push(Broad(ask_price, ask_quantity, bid_price, bid_quantity, fill_price, fill_quantity));
                         fill_quantity = 0;
                     }
                 } else {
@@ -269,7 +316,7 @@ public:
             if (quantity > 0)
                 Add_Limit_Order(buy, price, quantity, time);
             else if (fill_quantity > 0) //Broadcast(fill_price, fill_quantity);
-                broadcast_queue.push({fill_price, fill_quantity});
+                broadcast_queue.push(Broad(ask_price, ask_quantity, bid_price, bid_quantity, fill_price, fill_quantity));
         } else {
             while (!buy_orders.empty() && quantity > 0) {
                 auto it = buy_orders.begin();
@@ -281,15 +328,16 @@ public:
                 quantity -= temp_quantity;
                 total_quantity_bid -= temp_quantity;
                 current_quantity -= temp_quantity;
-                fill_quantity += temp_quantity;
-                if (current_quantity == 0) {
+                fill_quantity = temp_quantity;
+                if (current_quantity <= 0) {
                     buy_orders.erase(it);
                     bid_prices[fill_price] -= fill_quantity;
                     Update_Market_Values();
-                    if (bid_prices[fill_price] == 0) {
+                    if (bid_prices[fill_price] <= 0) {
                         bid_prices.erase(fill_price);
                         //Broadcast(fill_price, fill_quantity);
-                        broadcast_queue.push({fill_price, fill_quantity});
+                        Update_Market_Values();
+                        broadcast_queue.push(Broad(ask_price, ask_quantity, bid_price, bid_quantity, fill_price, fill_quantity));
                         fill_quantity = 0;
                     }
                 } else {
@@ -302,7 +350,7 @@ public:
             if (quantity > 0)
                 Add_Limit_Order(buy, price, quantity, time);
             else if (fill_quantity > 0) //Broadcast(fill_price, fill_quantity);
-                broadcast_queue.push({fill_price, fill_quantity});
+                broadcast_queue.push(Broad(ask_price, ask_quantity, bid_price, bid_quantity, fill_price, fill_quantity));
         }
     }
 
@@ -318,7 +366,8 @@ public:
         // std::ifstream fin("Pending_Orders.txt");
         // while(fin){
         //     bool buy;
-        //     long long price, quantity, time;
+        //     long double price;
+        //     long long quantity, time;
         //     fin >> buy >> price >> quantity >> time;
         //     if(fin) Add_Limit_Order(buy, price, quantity, time);
         // }
@@ -339,17 +388,23 @@ public:
     // }
 };
 
-Exchange exchange;
+Exchange _exchange;
 
 void Book_Updater () {
     while (true) {
-        if (!pending_orders.empty()) {
-            auto order = pending_orders.front();
-            pending_orders.pop();
-            bool buy = order.buy; long long price = order.price, quantity = order.quantity, time = order.time;
-            if (order.price == -1) exchange.Fill_Market_Order(buy, quantity);
-            else exchange.Add_Limit_Order(buy, price, quantity, time);
+        if (m.try_lock()){
+            if (!pending_orders.empty()) {
+                auto order = pending_orders.front();
+                pending_orders.pop();
+                bool buy = order.buy; 
+                long double price = order.price;
+                long long quantity = order.quantity, time = order.time;
+                if (order.price == -1) _exchange.Fill_Market_Order(buy, quantity);
+                else _exchange.Add_Limit_Order(buy, price, quantity, time);
+            }
+            m.unlock();
         }
+        this_thread::sleep_for(chrono::milliseconds(1));
     }
 }
 
@@ -358,10 +413,32 @@ void Broadcaster () {
         if (!broadcast_queue.empty()) {
             auto broad = broadcast_queue.front();
             broadcast_queue.pop();
-            long long price = broad.first, quantity = broad.second;
-            if (price == -1) exchange.Broadcast();
-            else exchange.Broadcast(price, quantity);
+            _exchange.Broadcast(broad);
         }
+    }
+}
+
+void bot1(){
+    while(bot1_flag){
+        if (m.try_lock()){
+            long double price = glr(100,200);
+            long long quantity = gr(100);
+            //cout<<1<<" "<<price<<" "<<quantity<<endl;
+            pending_orders.push(Limit_Order(true, price, quantity, Get_Time()));
+            m.unlock();
+        }
+        this_thread::sleep_for(chrono::milliseconds(5));
+
+        if (m.try_lock()){
+            long double price = glr(100,200);
+            long long quantity = gr(100);
+            //cout<<0<<" "<<price<<" "<<quantity<<endl;
+            pending_orders.push(Limit_Order(false, price, quantity, Get_Time()));
+            m.unlock();
+        }
+
+        this_thread::sleep_for(chrono::milliseconds(5));
+        if (Get_Time()>5000) bot1_flag = false;
     }
 }
 
@@ -373,24 +450,32 @@ int main() {
 
     std::thread t2(Broadcaster);
     t2.detach();
+
+    std::thread t3(bot1);
+    t3.detach();
     
     while (true) {
         short int order_type;
         std::cin >> order_type;
         bool buy;
-        long long price, quantity;
+        long double price;
+        long long quantity;
         if (order_type == 0) {
             std::cin >> buy >> price >> quantity;
-            // exchange.Add_Limit_Order(buy, price, quantity, Get_Time());
+            // _exchange.Add_Limit_Order(buy, price, quantity, Get_Time());
             pending_orders.push(Limit_Order(buy, price, quantity, Get_Time()));
         } else if (order_type == 1) {
             std::cin >> buy >> quantity;
-            //exchange.Fill_Market_Order(buy, quantity);
+            //_exchange.Fill_Market_Order(buy, quantity);
             pending_orders.push(Limit_Order(buy, -1, quantity, Get_Time()));
         }
         else break;
     }
+    //bot1_flag =false;
     //wait for book updater to finish
+    while (bot1_flag){
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
     while(!pending_orders.empty()){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
