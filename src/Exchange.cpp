@@ -141,7 +141,7 @@ public:
                 quantity -= temp_quantity;
                 total_quantity_ask -= temp_quantity;
                 current_quantity -= temp_quantity;
-                fill_quantity += temp_quantity;
+                fill_quantity = temp_quantity;
                 if (current_quantity == 0) {
                     sell_orders.erase(it);
                     ask_prices[fill_price] -= temp_quantity;
@@ -174,7 +174,7 @@ public:
                 quantity -= temp_quantity;
                 total_quantity_bid -= temp_quantity;
                 current_quantity -= temp_quantity;
-                fill_quantity += temp_quantity;
+                fill_quantity = temp_quantity;
                 if (current_quantity == 0) {
                     buy_orders.erase(it);
                     bid_prices[fill_price] -= temp_quantity;
