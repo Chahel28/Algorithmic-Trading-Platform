@@ -62,7 +62,7 @@ void gaussianBot(int n){// n is the size of the window
     iota(mktAsks.begin(), mktAsks.end(), 1);
     iota(mktBids.begin(), mktBids.end(), 1);
     double meanBids = calcMean(mktBids), sdBids = calcSd(mktBids);
-    double meanAsks = calcMean(mktAsks), sdBids = calcSd(mktAsks);
+    double meanAsks = calcMean(mktAsks), sdAsks = calcSd(mktAsks);
     while(true){
         if(_exchange.ask_price != prevAsks){
             auto z = (_exchange.ask_price - calcMean(mktAsks))/calcSd(mktAsks);
