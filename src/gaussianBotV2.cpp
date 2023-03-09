@@ -55,12 +55,12 @@ double calcSd(deque<double> v){ // returns the standard deviation of a deque of 
     sd = sqrtl(sd);
     return sd;
 }
-void gaussianBot(int n){// n is the size of the window 
+void gaussianBot(int n = 5){// n is the size of the window 
     double prevBids = -1, prevAsks = -1;
     deque<double> mktBids(n);
     deque<double> mktAsks(n);
-    iota(mktAsks.begin(), mktAsks.end(), 1);
-    iota(mktBids.begin(), mktBids.end(), 1);
+    iota(mktAsks.begin(), mktAsks.end(), 100);
+    iota(mktBids.begin(), mktBids.end(), 100);
     double meanBids = calcMean(mktBids), sdBids = calcSd(mktBids);
     double meanAsks = calcMean(mktAsks), sdAsks = calcSd(mktAsks);
     while(true){
