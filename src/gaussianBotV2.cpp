@@ -12,13 +12,13 @@ using namespace std;
 // void refresh(){
 //     freopen("output.txt", "a",stdout); 
 // }
-// // long long ask_price, ask_quantity, bid_price, bid_quantity, total_quantity_ask, total_quantity_bid;
-// // pending_orders.push(Limit_Order(buy, price, quantity, Get_Time()));
-// class tempClass{
-//     public:
-//   long long ask_price, ask_quantity, bid_price, bid_quantity, total_quantity_ask, total_quantity_bid; 
-// };
-// tempClass _exchange;
+// long long ask_price, ask_quantity, bid_price, bid_quantity, total_quantity_ask, total_quantity_bid;
+// pending_orders.push(Limit_Order(buy, price, quantity, Get_Time()));
+class tempClass{
+    public:
+  long long ask_price, ask_quantity, bid_price, bid_quantity, total_quantity_ask, total_quantity_bid; 
+};
+tempClass _exchange;
 
 //-------------------COPY THE CODE FROM HERE-----------------------------------------------------------------------------------------------------------------
 default_random_engine rd(time(0));
@@ -37,7 +37,7 @@ void order(int x, int y, int z, int d){
 double normalCDF(double value){
     return 0.5*erfc(-value*sqrtl(0.5));
 }
-double calcMean(deque<double> v){
+double calcMean(deque<double> v){ // returns the mean of a deque of numbers
     double sum = 0;
     for(int i = 0; i<v.size(); i++){
         sum += v[i];
@@ -45,7 +45,7 @@ double calcMean(deque<double> v){
     sum /= v.size();
     return sum;
 }
-double calcSd(deque<double> v){
+double calcSd(deque<double> v){ // returns the standard deviation of a deque of numbers
     double sd = 0;
     auto mean = calcMean(v);
     for(int i = 0; i<v.size(); i++){
@@ -55,29 +55,41 @@ double calcSd(deque<double> v){
     sd = sqrtl(sd);
     return sd;
 }
-void gaussianBot(){
-    double prev = -1;
-    deque<double> mktPrices(10);
-    iota(mktPrices.begin(), mktPrices.end(), 1);
-    double mean = calcMean(mktPrices), sd = calcSd(mktPrices);
+void gaussianBot(int n){// n is the size of the window 
+    double prevBids = -1, prevAsks = -1;
+    deque<double> mktBids(n);
+    deque<double> mktAsks(n);
+    iota(mktAsks.begin(), mktAsks.end(), 1);
+    iota(mktBids.begin(), mktBids.end(), 1);
+    double meanBids = calcMean(mktBids), sdBids = calcSd(mktBids);
+    double meanAsks = calcMean(mktAsks), sdBids = calcSd(mktAsks);
     while(true){
-        if((_exchange.ask_price + _exchange.bid_price)/2.0 != prev){
-            auto z = ((_exchange.ask_price + _exchange.bid_price)/2.0 - mean)/sd;
-            if(z > 0){z = -z;}
-            auto probab = normalCDF(z) + 0.5;
-            //now execute something with a certain probability
+        if(_exchange.ask_price != prevAsks){
+            auto z = (_exchange.ask_price - calcMean(mktAsks))/calcSd(mktAsks);
+            if(z < 0){z = -z;}
+            auto acceptProbability = normalCDF(z) + 0.5;
             auto p = pickDist(rd);
-            if(p <= probab){
+            if(p <= acceptProbability){// accept the ask
                 pending_orders.push(Limit_Order(buy, _exchange.ask_price, quantityDist(rd), Get_Time()));
-                pending_orders.push(Limit_Order(sell, _exchange.bid_price, quantityDist(rd), Get_Time()));
             }
-            else{
-                //dont match the order, but do add it to the mktPrices
-                mktPrices.push_back((_exchange.ask_price + _exchange.bid_price)/2.0);
-                mktPrices.pop_front();
-            }
-            prev = (_exchange.ask_price + _exchange.bid_price)/2.0;
+            prevAsks = _exchange.ask_price;
+            mktAsks.push_back(_exchange.ask_price);
+            mktAsks.pop_front();
         }
+        if(_exchange.bid_price != prevBids){
+            auto z = (_exchange.bid_price - calcMean(mktBids))/calcSd(mktBids);
+            if(z < 0){z = -z;}
+            auto acceptProbability = normalCDF(z) + 0.5;
+            auto p = pickDist(rd);
+            if(p <= acceptProbability){// accept the bid
+                pending_orders.push(Limit_Order(sell, _exchange.bid_price, quantityDist(rd), Get_Time()));
+            } 
+            prevBids = _exchange.bid_price;
+            mktBids.push_back(_exchange.bid_price);
+            mktBids.pop_front();            
+        }
+
+
     }
 }
 
