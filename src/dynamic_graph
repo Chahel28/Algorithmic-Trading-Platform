@@ -1,0 +1,62 @@
+import time
+import matplotlib.pyplot as plt
+import numpy
+
+x_data = []
+y_data = []
+x_data_bot_buy = []
+x_data_bot_sell = []
+y_data_bot_buy = []
+y_data_bot_sell = []
+
+def update_line(new_data, bot_data):
+    x_data_new = [x[0] for x in new_data]
+    y_data_new = [x[1] for x in new_data]
+    x_data_bot_buy_new = [x[0] for x in bot_data if x[1]==1]
+    x_data_bot_sell_new = [x[0] for x in bot_data if x[1]==0]
+    y_data_bot_new_buy = [x[2] for x in bot_data if x[1]==1]
+    y_data_bot_new_sell = [x[2] for x in bot_data if x[1]==0]
+
+    
+    x_data.extend(x_data_new)
+    y_data.extend(y_data_new)
+
+    x_data_bot_buy.extend(x_data_bot_buy_new)
+    x_data_bot_sell.extend(x_data_bot_sell_new)
+    y_data_bot_buy.extend(y_data_bot_new_buy)
+    y_data_bot_sell.extend(y_data_bot_new_sell)
+
+    plt.rcParams['figure.figsize'] = [15, 8]
+    plt.plot(x_data, y_data)
+    plt.scatter(x_data_bot_buy, y_data_bot_buy, c = 'r', marker = '^')
+    plt.scatter(x_data_bot_sell, y_data_bot_sell, c = 'g', marker = 'v')
+    plt.grid()
+    plt.show()
+
+fileBytePos1 = 0
+fileBytePos2 = 0
+while True:
+    inFile1 = open('./Broadcasts.txt','r')
+    inFile1.seek(fileBytePos1)
+    data = inFile1.read()
+    data = data.split('\n')
+    data = [x.split(',') for x in data]
+    print(data)
+    data_preprocessed = [(float(x[0]),(float(x[1])+float(x[3]))/2)  for x in data if(len(x[0])>0 and len(x[1])>0 and len(x[3])>0 and x[1]!='1e+15' and x[3]!='1e+15')]
+    fileBytePos1 = inFile1.tell()
+    # update_line(data_preprocessed)
+    inFile1.close()
+    
+    inFile2 = open('./bot1_orders','r')
+    inFile2.seek(fileBytePos2)
+    data = inFile2.read()
+    data = data.split('\n')
+    data = [x.split(',') for x in data]
+    print(data)
+    data_preprocessed2 = [(float(x[0]),float(x[1]),float(x[2])) for x in data if(len(x[0])>0 and len(x[1])>0 and len(x[2])>0)]
+
+    fileBytePos2 = inFile2.tell()
+    update_line(data_preprocessed, data_preprocessed2)
+    inFile2.close()
+
+    time.sleep(10)
