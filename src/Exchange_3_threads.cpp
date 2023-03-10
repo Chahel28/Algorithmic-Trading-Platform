@@ -518,6 +518,46 @@ void gaussianBot(){// n is the size of the window
     }
 }
 
+void smaBot(){// n is the size of the window 
+    double prevBids = -1, prevAsks = -1;
+    deque<double> mktAsks20(20), mktAsks5(5);
+    iota(mktAsks20.begin(), mktAsks20.end(), 100);
+    iota(mktAsks5.begin(), mktAsks5.end(), 100);
+
+    while(Get_Time() < 5000){
+        if(_exchange.ask_price != prevAsks){
+            mktAsks20.push_back(_exchange.ask_price);
+            mktAsks20.pop_front();
+            mktAsks5.push_back(_exchange.ask_price);
+            mktAsks5.pop_front();
+            prevAsks = _exchange.ask_price;
+            double meanAsks20 = calcMean(mktAsks20), meanAsks5 = calcMean(mktAsks5);
+
+            if(meanAsks5 > meanAsks20){// accept the ask
+                auto price = _exchange.ask_price;
+                if (price == 1e15) { // I do not know why this is necessary
+                    price /= 1.000000000001;
+                }
+                if (m.try_lock()) {
+                    pending_orders.push(Limit_Order(true, price, quantityDist(rd), Get_Time()));
+                    m.unlock();
+                }
+            }
+
+            if(meanAsks5 < meanAsks20){// accept the bid
+                auto price = _exchange.ask_price;
+                if (price == 1e15) { // I do not know why this is necessary
+                    price /= 8e12;
+                }
+                if (m.try_lock()) {
+                    pending_orders.push(Limit_Order(false, price, quantityDist(rd), Get_Time()));
+                    m.unlock();
+                }
+            } 
+        }
+    }
+}
+
 int main() {
     Start_Exchange();
 
@@ -532,6 +572,9 @@ int main() {
 
     std::thread t4(gaussianBot);
     t4.detach();
+
+    std::thread t5(smaBot);
+    t5.detach();
     
     while (true) {
         short int order_type;
@@ -560,6 +603,7 @@ int main() {
     //wait for book updater to finish
     t3.join();
     t4.join();
+    t5.join();
 
     while(!pending_orders.empty()){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
