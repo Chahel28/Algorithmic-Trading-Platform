@@ -68,7 +68,6 @@ Input -1 to end the _exchange
 */
 
 long long time_of_start_of_exchange = 0;
-bool bot1_flag = true;
 // default_random_engine rd0(time(0));
 // std::uniform_int_distribution<int> orderType(0,1);
 // std::uniform_int_distribution<int> buySell(0,1);
@@ -419,7 +418,7 @@ void Broadcaster () {
 }
 
 void bot1(){
-    while(bot1_flag){
+    while(Get_Time() < 5000){
         if (m.try_lock()){
             long double price = glr(100,200);
             long long quantity = gr(100);
@@ -436,9 +435,86 @@ void bot1(){
             pending_orders.push(Limit_Order(false, price, quantity, Get_Time()));
             m.unlock();
         }
-
         this_thread::sleep_for(chrono::milliseconds(5));
-        if (Get_Time()>5000) bot1_flag = false;
+    }
+}
+
+default_random_engine rd(time(0));
+std::uniform_int_distribution<int> quantityDist(1,10);
+std::uniform_real_distribution<float> pickDist(0,1);
+
+double normalCDF(double value){
+    return 0.5*erfc(-value*sqrtl(0.5));
+}
+
+double calcMean(deque<double> v){ // returns the mean of a deque of numbers
+    double sum = 0;
+    for(int i = 0; i<v.size(); i++){
+        sum += v[i];
+    }
+    sum /= v.size();
+    return sum;
+}
+
+double calcSd(deque<double> v){ // returns the standard deviation of a deque of numbers
+    double sd = 0;
+    auto mean = calcMean(v);
+    for(int i = 0; i<v.size(); i++){
+        sd += (v[i] - mean)*(v[i] - mean);
+    }
+    sd /= v.size();
+    sd = sqrtl(sd);
+    return sd;
+}
+
+void gaussianBot(){// n is the size of the window 
+    double prevBids = -1, prevAsks = -1;
+    int n = 5;
+    deque<double> mktBids(n);
+    deque<double> mktAsks(n);
+    iota(mktAsks.begin(), mktAsks.end(), 100);
+    iota(mktBids.begin(), mktBids.end(), 100);
+    double meanBids = calcMean(mktBids), sdBids = calcSd(mktBids);
+    double meanAsks = calcMean(mktAsks), sdAsks = calcSd(mktAsks);
+    while(Get_Time() < 5000){
+        if(_exchange.ask_price != prevAsks){
+            auto z = (_exchange.ask_price - calcMean(mktAsks))/calcSd(mktAsks);
+            if(z < 0){z = -z;}
+            auto acceptProbability = normalCDF(z) + 0.5;
+            auto p = pickDist(rd);
+            if(p <= acceptProbability){// accept the ask
+                auto price = _exchange.ask_price;
+                if (price == 1e15) { // I do not know why this is necessary
+                    price /= 1.000000000001;
+                }
+                if (m.try_lock()) {
+                    pending_orders.push(Limit_Order(true, price, quantityDist(rd), Get_Time()));
+                    m.unlock();
+                }
+            }
+            prevAsks = _exchange.ask_price;
+            mktAsks.push_back(_exchange.ask_price);
+            mktAsks.pop_front();
+        }
+        if(_exchange.bid_price != prevBids){
+            auto z = (_exchange.bid_price - calcMean(mktBids))/calcSd(mktBids);
+            if(z < 0){z = -z;}
+            auto acceptProbability = normalCDF(z) + 0.5;
+            auto p = pickDist(rd);
+            if(p <= acceptProbability){// accept the bid
+                auto price = _exchange.ask_price;
+                if (price == 1e15) { // I do not know why this is necessary
+                    price /= 8e12;
+                }
+                if (m.try_lock()) {
+                    pending_orders.push(Limit_Order(false, price, quantityDist(rd), Get_Time()));
+                    m.unlock();
+                }
+            } 
+            prevBids = _exchange.bid_price;
+            mktBids.push_back(_exchange.bid_price);
+            mktBids.pop_front();            
+        }
     }
 }
 
@@ -453,6 +529,9 @@ int main() {
 
     std::thread t3(bot1);
     t3.detach();
+
+    std::thread t4(gaussianBot);
+    t4.detach();
     
     while (true) {
         short int order_type;
@@ -463,22 +542,29 @@ int main() {
         if (order_type == 0) {
             std::cin >> buy >> price >> quantity;
             // _exchange.Add_Limit_Order(buy, price, quantity, Get_Time());
-            pending_orders.push(Limit_Order(buy, price, quantity, Get_Time()));
+            if (m.try_lock()) {
+                pending_orders.push(Limit_Order(buy, price, quantity, Get_Time()));
+                m.unlock();
+            }
         } else if (order_type == 1) {
             std::cin >> buy >> quantity;
             //_exchange.Fill_Market_Order(buy, quantity);
-            pending_orders.push(Limit_Order(buy, -1, quantity, Get_Time()));
+            if (m.try_lock()) {
+                pending_orders.push(Limit_Order(buy, -1, quantity, Get_Time()));
+                m.unlock();
+            }
         }
         else break;
     }
-    //bot1_flag =false;
+
     //wait for book updater to finish
-    while (bot1_flag){
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
+    t3.join();
+    t4.join();
+
     while(!pending_orders.empty()){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+
     while (!broadcast_queue.empty()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
