@@ -35,20 +35,10 @@ std::vector<int> maCrossover(std::vector<double> &v, int w1, int w2) { // `v` ve
         std::swap(w1, w2);
     }
 
-    std::vector<double> smallMA, bigMA; // big and small window moving average vectors
-    for (int i = 0; i < w1; i++) {
-        smallMA.push_back(v[i]);
-    }
-    for (int i = 0; i < w1; i++) {
-        bigMA.push_back(v[i]);
-    }
+    // big and small window moving average vectors
+    std::vector<double> smallMA = simpleMovingAverage(v, w1);
+    std::vector<double> bigMA = simpleMovingAverage(v, w2);
 
-    for (auto &i : simpleMovingAverage(v, w1)) {
-        smallMA.push_back(i);
-    }
-    for (auto &i : simpleMovingAverage(v, w2)) {
-        bigMA.push_back(i);
-    }
     // Trades will be possible from index `w2` to `v.size() - 1` on smallMA and bigMA
 
     std::vector<int> diff(v.size()); // vector of price differences between bigMA and smallMA

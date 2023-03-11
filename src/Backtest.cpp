@@ -120,7 +120,7 @@ int main() {
         cagr_val = cagr(rets, years), sharpe = sharpe_ratio(rets), max_drawdown_val = max_drawdown(rets), hit_ratio_val = hit_ratio(rets);
         std::cout << "  MACD Crossover            : CAGR = " << cagr_val << "%, Sharpe Ratio = " << sharpe << " Max Drawdown = " << max_drawdown_val << " Hit Ratio = " << hit_ratio_val << "\n";
 
-        rets = returns(close, maCrossover(close, 20, 50));
+        rets = returns(close, maCrossover(close, 50, 200));
         cagr_val = cagr(rets, years), sharpe = sharpe_ratio(rets), max_drawdown_val = max_drawdown(rets), hit_ratio_val = hit_ratio(rets);
         std::cout << "  SMA-20 SMA-50 Crossover   : CAGR = " << cagr_val << "%, Sharpe Ratio = " << sharpe << " Max Drawdown = " << max_drawdown_val << " Hit Ratio = " << hit_ratio_val << "\n\n";
     }
